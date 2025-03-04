@@ -6,6 +6,13 @@ import AdminInquiries from './components/AdminInquiries';
 
 const container = document.getElementById('app');
 const adminContainer = document.getElementById('admin-app');
+import './bootstrap';
+
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+
+Alpine.start();
 
 if (container) {
     const root = createRoot(container);
