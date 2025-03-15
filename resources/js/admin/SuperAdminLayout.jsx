@@ -8,6 +8,7 @@ function SuperAdminLayout({ children }) {
         <Link to="/superadmin" className="mr-4 text-blue-500">Dashboard</Link>
         <Link to="/superadmin/inquiries" className="mr-4 text-blue-500">Inquiries</Link>
         <Link to="/superadmin/users" className="mr-4 text-blue-500">Users</Link>
+        <Link to="/superadmin/photos" className="mr-4 text-blue-500">Photos</Link>
       </nav>
       <div>{children}</div>
     </div>

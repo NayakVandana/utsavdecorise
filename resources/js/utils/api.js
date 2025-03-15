@@ -11,7 +11,6 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    console.log('Sending token:', token, 'for URL:', config.url); // Debug
     if (token && config.url !== '/inquiry') {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,7 +23,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && error.config.url !== '/inquiry') {
-      console.log('401 detected for URL:', error.config.url); // Debug
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
