@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Bill;
 use App\Models\BillItem;
-use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Http\Request;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 class BillController extends Controller
 {
     public function index()
@@ -84,10 +83,18 @@ class BillController extends Controller
         return response()->json(null, 204);
     }
 
+    // public function downloadPdf($id)
+    // {
+    //     $bill = Bill::with('items')->whereNull('deleted_at')->findOrFail($id);
+    //     $pdf = PDF::loadView('pdf.bill', compact('bill'));
+    //     return $pdf->download("invoice_{$bill->invoice_number}.pdf");
+    // }
+
+
     public function downloadPdf($id)
     {
-        $bill = Bill::with('items')->whereNull('deleted_at')->findOrFail($id);
-        $pdf = PDF::loadView('pdf.bill', compact('bill'));
-        return $pdf->download("invoice_{$bill->invoice_number}.pdf");
+        $bill = Bill::findOrFail($id); // Fetch the bill
+        $pdf = Pdf::loadView('pdf.bill', compact('bill')); // Load the view with bill data
+        return $pdf->download("bill_{$bill->id}.pdf"); // Trigger download
     }
 }

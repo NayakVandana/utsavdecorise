@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../utils/api';// Adjust the path to where your api.js is located
 
 const TemplateManager = ({ token }) => {
   const [templates, setTemplates] = useState([]);
@@ -15,60 +16,60 @@ const TemplateManager = ({ token }) => {
     items: [{ item_name: '', quantity: 1, price: 0 }],
     notes: '',
   });
-  const [preview, setPreview] = useState(form); // Default preview matches initial form
+  const [preview, setPreview] = useState(form);
+  const [editingTemplate, setEditingTemplate] = useState(null);
 
   useEffect(() => {
-    fetch('/api/bill-templates', { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(setTemplates)
-      .catch(err => console.error('Error fetching templates:', err));
+    const fetchTemplates = async () => {
+      try {
+        const response = await api.get('/bill-templates');
+        setTemplates(response.data);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+      }
+    };
+    fetchTemplates();
   }, [token]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const method = editingTemplate ? 'PUT' : 'POST';
-    const url = editingTemplate ? `/api/bill-templates/${editingTemplate.id}` : '/api/bill-templates';
+    const method = editingTemplate ? 'put' : 'post';
+    const url = editingTemplate ? `/bill-templates/${editingTemplate.id}` : '/bill-templates';
 
-    fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(form),
-    })
-      .then(res => res.json())
-      .then(updatedTemplate => {
-        if (editingTemplate) {
-          setTemplates(templates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t));
-          setEditingTemplate(null);
-        } else {
-          setTemplates([...templates, updatedTemplate]);
-        }
-        const resetForm = {
-          template_name: '',
-          name: '',
-          email: '',
-          mobile: '',
-          address: '',
-          invoice_number: '',
-          issue_date: '',
-          due_date: '',
-          status: 'pending',
-          items: [{ item_name: '', quantity: 1, price: 0 }],
-          notes: '',
-        };
-        setForm(resetForm);
-        setPreview(resetForm); // Reset preview to default form state
-      })
-      .catch(err => console.error('Error saving template:', err));
+    try {
+      const response = await api[method](url, form);
+      const updatedTemplate = response.data;
+
+      if (editingTemplate) {
+        setTemplates(templates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t));
+        setEditingTemplate(null);
+      } else {
+        setTemplates([...templates, updatedTemplate]);
+      }
+
+      const resetForm = {
+        template_name: '',
+        name: '',
+        email: '',
+        mobile: '',
+        address: '',
+        invoice_number: '',
+        issue_date: '',
+        due_date: '',
+        status: 'pending',
+        items: [{ item_name: '', quantity: 1, price: 0 }],
+        notes: '',
+      };
+      setForm(resetForm);
+      setPreview(resetForm);
+    } catch (err) {
+      console.error('Error saving template:', err);
+    }
   };
-
-  const [editingTemplate, setEditingTemplate] = useState(null);
 
   const handleEdit = (template) => {
     setEditingTemplate(template);
-    setForm({
+    const updatedForm = {
       template_name: template.template_name,
       name: template.name,
       email: template.email,
@@ -80,29 +81,18 @@ const TemplateManager = ({ token }) => {
       status: template.status,
       notes: template.notes || '',
       items: template.items.map(item => ({ ...item })),
-    });
-    setPreview({
-      template_name: template.template_name,
-      name: template.name,
-      email: template.email,
-      mobile: template.mobile,
-      address: template.address,
-      invoice_number: template.invoice_number,
-      issue_date: template.issue_date.slice(0, 16),
-      due_date: template.due_date.slice(0, 16),
-      status: template.status,
-      notes: template.notes || '',
-      items: template.items.map(item => ({ ...item })),
-    });
+    };
+    setForm(updatedForm);
+    setPreview(updatedForm);
   };
 
-  const handleDelete = (id) => {
-    fetch(`/api/bill-templates/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(() => {
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/bill-templates/${id}`);
       setTemplates(templates.filter(t => t.id !== id));
-    });
+    } catch (err) {
+      console.error('Error deleting template:', err);
+    }
   };
 
   const addItem = () => {
