@@ -13,8 +13,12 @@ import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminInquiries from './admin/AdminInquiries';
 import AdminPhotos from './admin/AdminPhotos';
-import BillManager from './admin/BillManager'; // Import BillManager
-import TemplateManager from './admin/TemplateManager'; // Import TemplateManager
+import BillList from './admin/BillList';
+import BillCreate from './admin/BillCreate';
+import BillEdit from './admin/BillEdit'; // New import
+import TemplateList from './admin/TemplateList';
+import TemplateCreate from './admin/TemplateCreate';
+import TemplateEdit from './admin/TemplateEdit'; // New import
 import SuperAdminLayout from './admin/SuperAdminLayout';
 import SuperAdminUsers from './admin/SuperAdminUsers';
 
@@ -51,8 +55,12 @@ function App() {
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/inquiries" element={<AdminInquiries />} />
                       <Route path="/photos" element={<AdminPhotos />} />
-                      <Route path="/bills" element={<BillManager token={token} />} /> {/* Added BillManager */}
-                      <Route path="/templates" element={<TemplateManager token={token} />} /> {/* Added TemplateManager */}
+                      <Route path="/bills" element={<BillList token={token} user={user} />} />
+                      <Route path="/bills/create" element={<BillCreate token={token} />} />
+                      <Route path="/bills/edit/:id" element={<BillEdit token={token} />} />
+                      <Route path="/templates" element={<TemplateList token={token} user={user} />} />
+                      <Route path="/templates/create" element={<TemplateCreate token={token} />} />
+                      <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />
                     </Routes>
                   </AdminLayout>
                 ) : (
@@ -72,8 +80,12 @@ function App() {
                       <Route path="/inquiries" element={<AdminInquiries />} />
                       <Route path="/users" element={<SuperAdminUsers />} />
                       <Route path="/photos" element={<AdminPhotos />} />
-                      <Route path="/bills" element={<BillManager token={token} />} /> {/* Added BillManager */}
-                      <Route path="/templates" element={<TemplateManager token={token} />} /> {/* Added TemplateManager */}
+                      <Route path="/bills" element={<BillList token={token} user={user} />} />
+                      <Route path="/bills/create" element={<BillCreate token={token} />} />
+                      <Route path="/bills/edit/:id" element={<BillEdit token={token} />} />
+                      <Route path="/templates" element={<TemplateList token={token} user={user} />} />
+                      <Route path="/templates/create" element={<TemplateCreate token={token} />} />
+                      <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />
                     </Routes>
                   </SuperAdminLayout>
                 ) : (
