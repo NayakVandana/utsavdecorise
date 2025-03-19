@@ -13,6 +13,8 @@ import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminInquiries from './admin/AdminInquiries';
 import AdminPhotos from './admin/AdminPhotos';
+import BillManager from './admin/BillManager'; // Import BillManager
+import TemplateManager from './admin/TemplateManager'; // Import TemplateManager
 import SuperAdminLayout from './admin/SuperAdminLayout';
 import SuperAdminUsers from './admin/SuperAdminUsers';
 
@@ -30,6 +32,7 @@ function App() {
         <Header token={token} setToken={setToken} setUser={setUser} />
         <main className="flex-grow">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<Services />} />
             <Route path="/about" element={<About />} />
@@ -37,6 +40,8 @@ function App() {
             <Route path="/gallery" element={<GuestGallery />} />
             <Route path="/login" element={<Login setToken={setToken} setUser={setUser} />} />
             <Route path="/register" element={<Register setToken={setToken} setUser={setUser} />} />
+
+            {/* Admin Routes */}
             <Route
               path="/admin/*"
               element={
@@ -46,6 +51,8 @@ function App() {
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/inquiries" element={<AdminInquiries />} />
                       <Route path="/photos" element={<AdminPhotos />} />
+                      <Route path="/bills" element={<BillManager token={token} />} /> {/* Added BillManager */}
+                      <Route path="/templates" element={<TemplateManager token={token} />} /> {/* Added TemplateManager */}
                     </Routes>
                   </AdminLayout>
                 ) : (
@@ -53,6 +60,8 @@ function App() {
                 )
               }
             />
+
+            {/* Super Admin Routes */}
             <Route
               path="/superadmin/*"
               element={
@@ -63,6 +72,8 @@ function App() {
                       <Route path="/inquiries" element={<AdminInquiries />} />
                       <Route path="/users" element={<SuperAdminUsers />} />
                       <Route path="/photos" element={<AdminPhotos />} />
+                      <Route path="/bills" element={<BillManager token={token} />} /> {/* Added BillManager */}
+                      <Route path="/templates" element={<TemplateManager token={token} />} /> {/* Added TemplateManager */}
                     </Routes>
                   </SuperAdminLayout>
                 ) : (
