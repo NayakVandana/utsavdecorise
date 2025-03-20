@@ -6,6 +6,8 @@ use App\Http\Controllers\GalleryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BillTemplateController;
+use App\Http\Controllers\TermsConditionController;
+
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -23,4 +25,7 @@ Route::middleware(\App\Http\Middleware\VerifyToken::class)->group(function () {
     Route::apiResource('bills', BillController::class);
     Route::get('bills/{id}/pdf', [BillController::class, 'downloadPdf'])->name('bills.pdf');
     Route::apiResource('bill-templates', BillTemplateController::class);
+//     Route::apiResource('bills', BillController::class);
+// Route::apiResource('bill-templates', BillTemplateController::class);
+Route::apiResource('terms-conditions', TermsConditionController::class);
 });

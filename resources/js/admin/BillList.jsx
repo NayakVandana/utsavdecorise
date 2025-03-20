@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Add Link
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 
-const BillList = ({ token, user }) => { // Add user prop
+const BillList = ({ token, user }) => {
   const [bills, setBills] = useState([]);
+  const [selectedTerms, setSelectedTerms] = useState({});
+  const apiUrl = 'http://localhost:8001';
 
   useEffect(() => {
     const fetchBills = async () => {
@@ -46,6 +48,23 @@ const BillList = ({ token, user }) => { // Add user prop
     }
   };
 
+  const handleCheckboxChange = (billId, termId) => {
+    setSelectedTerms(prev => {
+      const billTerms = prev[billId] || [];
+      if (billTerms.includes(termId)) {
+        return {
+          ...prev,
+          [billId]: billTerms.filter(id => id !== termId),
+        };
+      } else {
+        return {
+          ...prev,
+          [billId]: [...billTerms, termId],
+        };
+      }
+    });
+  };
+
   const basePath = user?.is_admin === 2 ? '/superadmin' : '/admin';
 
   return (
@@ -68,6 +87,37 @@ const BillList = ({ token, user }) => { // Add user prop
                 </li>
               ))}
             </ul>
+            {bill.bill_copy && (
+              <p className="text-sm text-gray-600">
+                <strong>Bill Copy:</strong>{' '}
+                {bill.bill_copy.endsWith('.pdf') ? (
+                  <a href={`${apiUrl}${bill.bill_copy}`} target="_blank" rel="noopener noreferrer" className="text-blue-500">View PDF</a>
+                ) : (
+                  <a href={`${apiUrl}${bill.bill_copy}`} target="_blank" rel="noopener noreferrer" className="text-blue-500">View Image</a>
+                )}
+              </p>
+            )}
+            {bill.terms_conditions && bill.terms_conditions.length > 0 && (
+              <div className="mt-2">
+                <strong className="text-sm text-gray-600">Terms:</strong>
+                <div className="mt-1 space-y-2">
+                  {bill.terms_conditions.map(tc => (
+                    <div key={tc.id} className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id={`term-${bill.id}-${tc.id}`}
+                        checked={selectedTerms[bill.id]?.includes(tc.id) || false}
+                        onChange={() => handleCheckboxChange(bill.id, tc.id)}
+                        className="mt-1 mr-2"
+                      />
+                      <label htmlFor={`term-${bill.id}-${tc.id}`} className="text-sm text-gray-600">
+                        {selectedTerms[bill.id]?.includes(tc.id) ? tc.content : `${tc.content.substring(0, 20)}...`}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               onClick={() => downloadPdf(bill.id)}
               className="mt-2 bg-purple-500 text-white p-2 rounded w-full"

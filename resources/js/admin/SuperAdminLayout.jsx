@@ -11,6 +11,7 @@ const SuperAdminLayout = ({ children }) => (
         <li><Link to="/superadmin/photos">Photos</Link></li>
         <li><Link to="/superadmin/bills">Bills</Link></li>
         <li><Link to="/superadmin/templates">Templates</Link></li>
+        <li><Link to="/superadmin/terms-conditions">Terms</Link></li>
       </ul>
     </nav>
     <div className="p-4">{children}</div>

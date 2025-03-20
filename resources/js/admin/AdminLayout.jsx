@@ -10,6 +10,7 @@ const AdminLayout = ({ children }) => (
         <li><Link to="/admin/photos">Photos</Link></li>
         <li><Link to="/admin/bills">Bills</Link></li>
         <li><Link to="/admin/templates">Templates</Link></li>
+        <li><Link to="/admin/terms-conditions">Terms</Link></li>
       </ul>
     </nav>
     <div className="p-4">{children}</div>

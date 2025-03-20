@@ -22,6 +22,7 @@ return new class extends Migration
             $table->dateTime('issue_date'); // Using datetime as per prior clarification
             $table->dateTime('due_date');   // Using datetime as per prior clarification
             $table->string('status')->default('pending'); // String instead of enum
+            $table->string('bill_copy')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();

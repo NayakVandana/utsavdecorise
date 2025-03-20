@@ -3,75 +3,113 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillTemplate;
+use App\Models\BillItem;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Validator;
 class BillTemplateController extends Controller
 {
     public function index()
     {
-        return response()->json(BillTemplate::whereNull('deleted_at')->get());
+        return response()->json(BillTemplate::with(['items', 'termsConditions'])->whereNull('deleted_at')->get());
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'template_name' => 'required|string|unique:bill_templates,template_name|max:255',
+        $validator = Validator::make($request->all(), [
+            'template_name' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'mobile' => 'required|string|max:20',
+            'mobile' => 'required|string|max:15',
             'address' => 'required|string',
             'invoice_number' => 'required|string|max:255',
             'issue_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:issue_date',
-            'status' => 'required|string|max:255',
-            'items' => 'required|array|min:1',
-            'items.*.item_name' => 'required|string|max:255',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
+            'status' => 'required|in:pending,paid,overdue',
+            'items' => 'required|json', // Expect items as JSON string
+            'terms_condition_ids' => 'nullable|array',
+            'terms_condition_ids.*' => 'exists:terms_conditions,id',
             'notes' => 'nullable|string',
         ]);
 
-        $validated['total_amount'] = array_sum(array_map(fn($item) => $item['quantity'] * $item['price'], $validated['items']));
-        $template = BillTemplate::create($validated);
-        return response()->json($template, 201);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $billTemplate = BillTemplate::create([
+            'template_name' => $request->template_name,
+            'name' => $request->name,
+            'email' => $request->email,
+            'mobile' => $request->mobile,
+            'address' => $request->address,
+            'invoice_number' => $request->invoice_number,
+            'issue_date' => $request->issue_date,
+            'due_date' => $request->due_date,
+            'status' => $request->status,
+            'items' => $request->items, // Store as JSON
+            'notes' => $request->notes,
+        ]);
+
+        if ($request->has('terms_condition_ids')) {
+            $billTemplate->termsConditions()->sync($request->terms_condition_ids);
+        }
+
+        return response()->json($billTemplate, 201);
     }
 
     public function show($id)
     {
-        return response()->json(BillTemplate::whereNull('deleted_at')->findOrFail($id));
+        return response()->json(BillTemplate::with(['items', 'termsConditions'])->whereNull('deleted_at')->findOrFail($id));
     }
 
     public function update(Request $request, $id)
     {
-        $template = BillTemplate::whereNull('deleted_at')->findOrFail($id);
-        $validated = $request->validate([
-            'template_name' => 'sometimes|string|unique:bill_templates,template_name,' . $template->id . '|max:255',
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
-            'mobile' => 'sometimes|string|max:20',
-            'address' => 'sometimes|string',
-            'invoice_number' => 'sometimes|string|max:255',
-            'issue_date' => 'sometimes|date',
-            'due_date' => 'sometimes|date|after_or_equal:issue_date',
-            'status' => 'sometimes|string|max:255',
-            'items' => 'sometimes|array|min:1',
-            'items.*.item_name' => 'required|string|max:255',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric|min:0',
+        $billTemplate = BillTemplate::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'template_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'mobile' => 'required|string|max:15',
+            'address' => 'required|string',
+            'invoice_number' => 'required|string|max:255',
+            'issue_date' => 'required|date',
+            'due_date' => 'required|date|after_or_equal:issue_date',
+            'status' => 'required|in:pending,paid,overdue',
+            'items' => 'required|json',
+            'terms_condition_ids' => 'nullable|array',
+            'terms_condition_ids.*' => 'exists:terms_conditions,id',
             'notes' => 'nullable|string',
         ]);
 
-        if ($request->has('items')) {
-            $validated['total_amount'] = array_sum(array_map(fn($item) => $item['quantity'] * $item['price'], $validated['items']));
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
-        $template->update($validated);
-        return response()->json($template);
+
+        $billTemplate->update([
+            'template_name' => $request->template_name,
+            'name' => $request->name,
+            'email' => $request->email,
+            'mobile' => $request->mobile,
+            'address' => $request->address,
+            'invoice_number' => $request->invoice_number,
+            'issue_date' => $request->issue_date,
+            'due_date' => $request->due_date,
+            'status' => $request->status,
+            'items' => $request->items, // Update as JSON
+            'notes' => $request->notes,
+        ]);
+
+        if ($request->has('terms_condition_ids')) {
+            $billTemplate->termsConditions()->sync($request->terms_condition_ids);
+        }
+
+        return response()->json($billTemplate, 200);
     }
 
     public function destroy($id)
     {
         $template = BillTemplate::whereNull('deleted_at')->findOrFail($id);
-        $template->delete(); // Soft delete
+        $template->delete();
         return response()->json(null, 204);
     }
 }

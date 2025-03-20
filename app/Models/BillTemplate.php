@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BillTemplate extends Model
 {
-    use SoftDeletes; // Added for soft deletes
+    use SoftDeletes;
+
+    protected $table = 'bill_templates';
 
     protected $fillable = [
-        'template_name', 'name', 'email', 'mobile', 'address', 'invoice_number', 
-        'total_amount', 'issue_date', 'due_date', 'status', 'items', 'notes',
+        'template_name', 'name', 'email', 'mobile', 'address',
+        'invoice_number', 'issue_date', 'due_date', 'status',
+        'items', 'notes',
     ];
 
     protected $casts = [
@@ -22,4 +25,18 @@ class BillTemplate extends Model
     ];
 
     protected $dates = ['deleted_at']; // Required for soft deletes
+
+
+
+    public function items()
+    {
+        return $this->hasMany(BillItem::class, 'bill_id');
+    }
+
+    public function termsConditions()
+    {
+        return $this->belongsToMany(TermsCondition::class, 'bill_template_terms_conditions');
+    }
+
+    
 }

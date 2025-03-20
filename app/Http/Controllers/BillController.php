@@ -10,7 +10,7 @@ class BillController extends Controller
 {
     public function index()
     {
-        return response()->json(Bill::with('items')->whereNull('deleted_at')->get());
+        return response()->json(Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->get());
     }
 
     public function store(Request $request)
@@ -29,20 +29,39 @@ class BillController extends Controller
             'items.*.item_name' => 'required|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'bill_copy' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'terms_condition_ids' => 'nullable|array',
+            'terms_condition_ids.*' => 'exists:terms_conditions,id',
         ]);
 
-        $bill = Bill::create($validated);
+        $billData = $request->only([
+            'name', 'email', 'mobile', 'address', 'invoice_number',
+            'issue_date', 'due_date', 'status', 'notes'
+        ]);
+
+        if ($request->hasFile('bill_copy')) {
+            $file = $request->file('bill_copy');
+            $filename = $file->getClientOriginalName();
+            $file->move(public_path('photos'), $filename);
+            $billData['bill_copy'] = '/photos/' . $filename;
+        }
+
+        $bill = Bill::create($billData);
         foreach ($validated['items'] as $item) {
             $bill->items()->create($item);
         }
         $bill->calculateTotal();
 
-        return response()->json($bill->load('items'), 201);
+        if ($request->has('terms_condition_ids')) {
+            $bill->termsConditions()->sync($validated['terms_condition_ids']);
+        }
+
+        return response()->json($bill->load(['items', 'termsConditions']), 201);
     }
 
     public function show($id)
     {
-        return response()->json(Bill::with('items')->whereNull('deleted_at')->findOrFail($id));
+        return response()->json(Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -62,39 +81,68 @@ class BillController extends Controller
             'items.*.item_name' => 'required|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'bill_copy' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'terms_condition_ids' => 'nullable|array',
+            'terms_condition_ids.*' => 'exists:terms_conditions,id',
         ]);
 
-        $bill->update($validated);
+        $billData = $request->only([
+            'name', 'email', 'mobile', 'address', 'invoice_number',
+            'issue_date', 'due_date', 'status', 'notes'
+        ]);
+
+        if ($request->hasFile('bill_copy')) {
+            if ($bill->bill_copy && file_exists(public_path($bill->bill_copy))) {
+                unlink(public_path($bill->bill_copy));
+            }
+            $file = $request->file('bill_copy');
+            $filename = $file->getClientOriginalName();
+            $file->move(public_path('photos'), $filename);
+            $billData['bill_copy'] = '/photos/' . $filename;
+        }
+
+        $bill->update($billData);
         if ($request->has('items')) {
-            $bill->items()->delete(); // Soft delete items
+            $bill->items()->delete();
             foreach ($validated['items'] as $item) {
                 $bill->items()->create($item);
             }
             $bill->calculateTotal();
         }
+        if ($request->has('terms_condition_ids')) {
+            $bill->termsConditions()->sync($validated['terms_condition_ids']);
+        }
 
-        return response()->json($bill->load('items'));
+        return response()->json($bill->load(['items', 'termsConditions']));
     }
 
     public function destroy($id)
     {
         $bill = Bill::whereNull('deleted_at')->findOrFail($id);
-        $bill->delete(); // Soft delete
+        if ($bill->bill_copy && file_exists(public_path($bill->bill_copy))) {
+            unlink(public_path($bill->bill_copy));
+        }
+        $bill->delete();
         return response()->json(null, 204);
     }
-
-    // public function downloadPdf($id)
-    // {
-    //     $bill = Bill::with('items')->whereNull('deleted_at')->findOrFail($id);
-    //     $pdf = PDF::loadView('pdf.bill', compact('bill'));
-    //     return $pdf->download("invoice_{$bill->invoice_number}.pdf");
-    // }
-
-
     public function downloadPdf($id)
     {
-        $bill = Bill::findOrFail($id); // Fetch the bill
-        $pdf = Pdf::loadView('pdf.bill', compact('bill')); // Load the view with bill data
-        return $pdf->download("bill_{$bill->id}.pdf"); // Trigger download
+        $bill = Bill::with(['items', 'termsConditions'])->findOrFail($id);
+        return response()->json($bill , 200);
+        dd( $bill);
+        $bill->calculateTotal(); // Updates total_amount based on BillItem records
+
+        // Ensure $bill->items is always a collection, even if no items exist
+        if (is_null($bill->items)) {
+            $bill->setRelation('items', collect([]));
+        }
+
+        // Optional: Debug to verify items
+        // dd($bill->items->toArray());
+
+        $pdf = PDF::loadView('pdf.bill', compact('bill'));
+        return $pdf->download("bill_{$bill->id}.pdf");
     }
+
+
 }

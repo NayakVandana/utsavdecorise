@@ -15,12 +15,14 @@ import AdminInquiries from './admin/AdminInquiries';
 import AdminPhotos from './admin/AdminPhotos';
 import BillList from './admin/BillList';
 import BillCreate from './admin/BillCreate';
-import BillEdit from './admin/BillEdit'; // New import
+import BillEdit from './admin/BillEdit';
 import TemplateList from './admin/TemplateList';
 import TemplateCreate from './admin/TemplateCreate';
-import TemplateEdit from './admin/TemplateEdit'; // New import
+import TemplateEdit from './admin/TemplateEdit';
 import SuperAdminLayout from './admin/SuperAdminLayout';
 import SuperAdminUsers from './admin/SuperAdminUsers';
+import TermsConditionList from './admin/TermsConditionList'; // New import
+import TermsConditionForm from './admin/TermsConditionForm';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -61,6 +63,9 @@ function App() {
                       <Route path="/templates" element={<TemplateList token={token} user={user} />} />
                       <Route path="/templates/create" element={<TemplateCreate token={token} />} />
                       <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />
+                      <Route path="/terms-conditions" element={<TermsConditionList token={token} user={user} />} />
+                      <Route path="/terms-conditions/create" element={<TermsConditionForm token={token} />} />
+                      <Route path="/terms-conditions/edit/:id" element={<TermsConditionForm token={token} />} />
                     </Routes>
                   </AdminLayout>
                 ) : (
@@ -86,6 +91,9 @@ function App() {
                       <Route path="/templates" element={<TemplateList token={token} user={user} />} />
                       <Route path="/templates/create" element={<TemplateCreate token={token} />} />
                       <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />
+                      <Route path="/terms-conditions" element={<TermsConditionList token={token} user={user} />} />
+                      <Route path="/terms-conditions/create" element={<TermsConditionForm token={token} />} />
+                      <Route path="/terms-conditions/edit/:id" element={<TermsConditionForm token={token} />} />
                     </Routes>
                   </SuperAdminLayout>
                 ) : (
