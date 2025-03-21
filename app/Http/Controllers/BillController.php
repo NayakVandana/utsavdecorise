@@ -6,11 +6,17 @@ use App\Models\Bill;
 use App\Models\BillItem;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
+
 class BillController extends Controller
 {
     public function index()
     {
-        return response()->json(Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->get());
+        $bills = Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->get();
+        foreach ($bills as $bill) {
+            $bill->calculateTotal(); // Ensure total_amount is up-to-date
+        }
+        return response()->json($bills);
     }
 
     public function store(Request $request)
@@ -50,7 +56,7 @@ class BillController extends Controller
         foreach ($validated['items'] as $item) {
             $bill->items()->create($item);
         }
-        $bill->calculateTotal();
+        $bill->calculateTotal(); // Update total_amount after adding items
 
         if ($request->has('terms_condition_ids')) {
             $bill->termsConditions()->sync($validated['terms_condition_ids']);
@@ -61,7 +67,9 @@ class BillController extends Controller
 
     public function show($id)
     {
-        return response()->json(Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->findOrFail($id));
+        $bill = Bill::with(['items', 'termsConditions'])->whereNull('deleted_at')->findOrFail($id);
+        $bill->calculateTotal(); // Ensure total_amount is current
+        return response()->json($bill);
     }
 
     public function update(Request $request, $id)
@@ -103,11 +111,11 @@ class BillController extends Controller
 
         $bill->update($billData);
         if ($request->has('items')) {
-            $bill->items()->delete();
+            $bill->items()->delete(); // Remove old items
             foreach ($validated['items'] as $item) {
-                $bill->items()->create($item);
+                $bill->items()->create($item); // Add new items
             }
-            $bill->calculateTotal();
+            $bill->calculateTotal(); // Recalculate total_amount
         }
         if ($request->has('terms_condition_ids')) {
             $bill->termsConditions()->sync($validated['terms_condition_ids']);
@@ -125,24 +133,29 @@ class BillController extends Controller
         $bill->delete();
         return response()->json(null, 204);
     }
+
     public function downloadPdf($id)
     {
         $bill = Bill::with(['items', 'termsConditions'])->findOrFail($id);
-        return response()->json($bill , 200);
-        dd( $bill);
-        $bill->calculateTotal(); // Updates total_amount based on BillItem records
+        $bill->calculateTotal(); // Ensure total_amount is updated
 
-        // Ensure $bill->items is always a collection, even if no items exist
-        if (is_null($bill->items)) {
-            $bill->setRelation('items', collect([]));
-        }
+        // Debug: Log items and total
+        Log::info("Bill data for ID: {$id}", [
+            'items' => $bill->items ? $bill->items->toArray() : 'null',
+            'total_amount' => $bill->total_amount,
+        ]);
 
-        // Optional: Debug to verify items
-        // dd($bill->items->toArray());
+        // Convert items to plain array for PDF
+        $itemsArray = $bill->items ? $bill->items->map(function ($item) {
+            return [
+                'item_name' => $item->item_name,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+                'subtotal' => $item->subtotal,
+            ];
+        })->toArray() : [];
 
-        $pdf = PDF::loadView('pdf.bill', compact('bill'));
+        $pdf = Pdf::loadView('pdf.bill', compact('bill', 'itemsArray'));
         return $pdf->download("bill_{$bill->id}.pdf");
     }
-
-
 }

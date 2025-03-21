@@ -11,18 +11,17 @@ class Bill extends Model
 
     protected $fillable = [
         'name', 'email', 'mobile', 'address', 'invoice_number',
-        'issue_date', 'due_date', 'status', 'notes', 'items', 'bill_copy',
+        'issue_date', 'due_date', 'status', 'notes', 'bill_copy', // Removed 'items' since it's not used
     ];
     protected $casts = [
         'total_amount' => 'decimal:2',
         'issue_date' => 'datetime',
         'due_date' => 'datetime',
-        'items' => 'array',
+        // Removed 'items' => 'array' to avoid conflict with items() relationship
     ];
 
-    
+    protected $dates = ['deleted_at'];
 
-    protected $dates = ['deleted_at']; // Required for soft deletes
     public function items()
     {
         return $this->hasMany(BillItem::class);
@@ -35,7 +34,9 @@ class Bill extends Model
 
     public function calculateTotal()
     {
-        $this->total_amount = $this->items->sum('subtotal');
+        // Ensure items is a collection, load if not already loaded
+        $items = $this->items ?: $this->items()->get();
+        $this->total_amount = $items->sum('subtotal');
         $this->save();
     }
 }

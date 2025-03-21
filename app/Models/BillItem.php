@@ -18,4 +18,10 @@ class BillItem extends Model
     {
         return $this->belongsTo(Bill::class);
     }
+
+    public function getSubtotalAttribute()
+    {
+        return $this->quantity * $this->price;
+    }
+
 }

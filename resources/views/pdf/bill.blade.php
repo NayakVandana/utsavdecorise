@@ -4,7 +4,7 @@
     <title>Invoice {{ $bill->invoice_number }}</title>
     <meta charset="UTF-8">
     <style>
-        /* General Styles */
+        /* [Your existing styles remain unchanged] */
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
@@ -118,6 +118,8 @@
         @endif
     </div>
 
+    <p>Debug: Items count: {{ count($itemsArray) }}</p>
+
     <table>
         <thead>
             <tr>
@@ -128,12 +130,12 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($bill->items ?? [] as $item)
+            @forelse($itemsArray as $item)
                 <tr>
-                    <td>{{ $item->item_name }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>${{ number_format($item->price, 2) }}</td>
-                    <td>${{ number_format($item->subtotal, 2) }}</td>
+                    <td>{{ $item['item_name'] }}</td>
+                    <td>{{ $item['quantity'] }}</td>
+                    <td>${{ number_format($item['price'], 2) }}</td>
+                    <td>${{ number_format($item['subtotal'], 2) }}</td>
                 </tr>
             @empty
                 <tr>
