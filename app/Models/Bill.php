@@ -11,13 +11,13 @@ class Bill extends Model
 
     protected $fillable = [
         'name', 'email', 'mobile', 'address', 'invoice_number',
-        'issue_date', 'due_date', 'status', 'notes', 'bill_copy', // Removed 'items' since it's not used
+        'issue_date', 'due_date', 'status', 'notes', 'bill_copy',
     ];
+
     protected $casts = [
         'total_amount' => 'decimal:2',
         'issue_date' => 'datetime',
         'due_date' => 'datetime',
-        // Removed 'items' => 'array' to avoid conflict with items() relationship
     ];
 
     protected $dates = ['deleted_at'];
@@ -32,11 +32,28 @@ class Bill extends Model
         return $this->belongsToMany(TermsCondition::class, 'bill_terms_conditions');
     }
 
+    public function receivePayments()
+    {
+        return $this->hasMany(ReceivePayment::class);
+    }
+
     public function calculateTotal()
     {
-        // Ensure items is a collection, load if not already loaded
         $items = $this->items ?: $this->items()->get();
         $this->total_amount = $items->sum('subtotal');
         $this->save();
     }
+
+    public function updatePaymentStatus()
+{
+    $totalReceived = $this->receivePayments()->sum('amount');
+    if ($totalReceived >= $this->total_amount && $this->total_amount > 0) {
+        $this->status = 'completed';
+    } elseif ($totalReceived > 0) {
+        $this->status = 'partially_paid';
+    } else {
+        $this->status = 'pending';
+    }
+    $this->save();
+}
 }

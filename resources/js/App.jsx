@@ -21,8 +21,11 @@ import TemplateCreate from './admin/TemplateCreate';
 import TemplateEdit from './admin/TemplateEdit';
 import SuperAdminLayout from './admin/SuperAdminLayout';
 import SuperAdminUsers from './admin/SuperAdminUsers';
-import TermsConditionList from './admin/TermsConditionList'; // New import
+import TermsConditionList from './admin/TermsConditionList';
 import TermsConditionForm from './admin/TermsConditionForm';
+import ReceivePaymentForm from './admin/ReceivePaymentForm';
+import ReceivePaymentList from './admin/ReceivePaymentList';
+import AllReceivePayments from './admin/AllReceivePayments'; // New import
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -60,6 +63,9 @@ function App() {
                       <Route path="/bills" element={<BillList token={token} user={user} />} />
                       <Route path="/bills/create" element={<BillCreate token={token} />} />
                       <Route path="/bills/edit/:id" element={<BillEdit token={token} />} />
+                      <Route path="/bills/:billId/payments/add" element={<ReceivePaymentForm token={token} user={user} />} />
+                      <Route path="/bills/:billId/payments" element={<ReceivePaymentList token={token} user={user} />} />
+                      <Route path="/all-payments" element={<AllReceivePayments token={token} user={user} />} /> {/* New Route */}
                       <Route path="/templates" element={<TemplateList token={token} user={user} />} />
                       <Route path="/templates/create" element={<TemplateCreate token={token} />} />
                       <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />
@@ -88,6 +94,9 @@ function App() {
                       <Route path="/bills" element={<BillList token={token} user={user} />} />
                       <Route path="/bills/create" element={<BillCreate token={token} />} />
                       <Route path="/bills/edit/:id" element={<BillEdit token={token} />} />
+                      <Route path="/bills/:billId/payments/add" element={<ReceivePaymentForm token={token} user={user} />} />
+                      <Route path="/bills/:billId/payments" element={<ReceivePaymentList token={token} user={user} />} />
+                      <Route path="/all-payments" element={<AllReceivePayments token={token} user={user} />} /> {/* New Route */}
                       <Route path="/templates" element={<TemplateList token={token} user={user} />} />
                       <Route path="/templates/create" element={<TemplateCreate token={token} />} />
                       <Route path="/templates/edit/:id" element={<TemplateEdit token={token} />} />

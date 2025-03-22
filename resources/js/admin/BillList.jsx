@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
 const BillList = ({ token, user }) => {
   const [bills, setBills] = useState([]);
   const [selectedTerms, setSelectedTerms] = useState({});
+  const navigate = useNavigate();
   const apiUrl = 'http://localhost:8001';
 
   useEffect(() => {
@@ -30,9 +31,7 @@ const BillList = ({ token, user }) => {
 
   const downloadPdf = async (billId) => {
     try {
-      const response = await api.get(`/bills/${billId}/pdf`, {
-        responseType: 'blob',
-      });
+      const response = await api.get(`/bills/${billId}/pdf`, { responseType: 'blob' });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -44,7 +43,25 @@ const BillList = ({ token, user }) => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error downloading PDF:', err);
-      alert('Failed to download PDF. Please try again.');
+      alert('Failed to download PDF.');
+    }
+  };
+
+  const downloadPaymentStatement = async (billId) => {
+    try {
+      const response = await api.get(`/bills/${billId}/payment-statement`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `payment_statement_${billId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading payment statement:', err);
+      alert('Failed to download payment statement.');
     }
   };
 
@@ -52,17 +69,20 @@ const BillList = ({ token, user }) => {
     setSelectedTerms(prev => {
       const billTerms = prev[billId] || [];
       if (billTerms.includes(termId)) {
-        return {
-          ...prev,
-          [billId]: billTerms.filter(id => id !== termId),
-        };
+        return { ...prev, [billId]: billTerms.filter(id => id !== termId) };
       } else {
-        return {
-          ...prev,
-          [billId]: [...billTerms, termId],
-        };
+        return { ...prev, [billId]: [...billTerms, termId] };
       }
     });
+  };
+
+  const hasPayments = (bill) => {
+    return bill.receive_payments && bill.receive_payments.length > 0;
+  };
+
+  const getPendingAmount = (bill) => {
+    const totalReceived = bill.receive_payments?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0;
+    return bill.total_amount - totalReceived;
   };
 
   const basePath = user?.is_admin === 2 ? '/superadmin' : '/admin';
@@ -80,6 +100,7 @@ const BillList = ({ token, user }) => {
             <p className="text-sm text-gray-600">Invoice: {bill.invoice_number}</p>
             <p className="text-sm text-gray-600">Total: ${bill.total_amount}</p>
             <p className="text-sm text-gray-600">Status: {bill.status}</p>
+            <p className="text-sm text-gray-600">Pending: ${getPendingAmount(bill).toFixed(2)}</p>
             <ul className="mt-2">
               {bill.items.map(item => (
                 <li key={item.id} className="text-sm text-gray-600">
@@ -97,39 +118,56 @@ const BillList = ({ token, user }) => {
                 )}
               </p>
             )}
-            {bill.terms_conditions && bill.terms_conditions.length > 0 && (
+            {hasPayments(bill) && (
               <div className="mt-2">
-                <strong className="text-sm text-gray-600">Terms:</strong>
-                <div className="mt-1 space-y-2">
-                  {bill.terms_conditions.map(tc => (
-                    <div key={tc.id} className="flex items-start">
-                      <input
-                        type="checkbox"
-                        id={`term-${bill.id}-${tc.id}`}
-                        checked={selectedTerms[bill.id]?.includes(tc.id) || false}
-                        onChange={() => handleCheckboxChange(bill.id, tc.id)}
-                        className="mt-1 mr-2"
-                      />
-                      <label htmlFor={`term-${bill.id}-${tc.id}`} className="text-sm text-gray-600">
-                        {selectedTerms[bill.id]?.includes(tc.id) ? tc.content : `${tc.content.substring(0, 20)}...`}
-                      </label>
-                    </div>
+                <strong className="text-sm text-gray-600">Payments:</strong>
+                <ul className="mt-1 space-y-1">
+                  {bill.receive_payments.map(payment => (
+                    <li key={payment.id} className="text-sm text-gray-600">
+                      ${payment.amount} - {payment.payment_type.toUpperCase()} via {payment.mode_of_payment.toUpperCase()} on {new Date(payment.payment_date).toLocaleString()}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
             <button
               onClick={() => downloadPdf(bill.id)}
               className="mt-2 bg-purple-500 text-white p-2 rounded w-full"
             >
-              Download PDF
+              Download Bill PDF
             </button>
-            <Link
-              to={`${basePath}/bills/edit/${bill.id}`}
-              className="mt-2 bg-blue-500 text-white p-2 rounded w-full block text-center"
-            >
-              Edit
-            </Link>
+            {!hasPayments(bill) && (
+              <Link
+                to={`${basePath}/bills/edit/${bill.id}`}
+                className="mt-2 bg-blue-500 text-white p-2 rounded w-full block text-center"
+              >
+                Edit
+              </Link>
+            )}
+            {getPendingAmount(bill) > 0 && (
+              <Link
+                to={`${basePath}/bills/${bill.id}/payments/add`}
+                className="mt-2 bg-yellow-500 text-white p-2 rounded w-full block text-center"
+              >
+                Add Payment
+              </Link>
+            )}
+            {hasPayments(bill) && (
+              <>
+                <Link
+                  to={`${basePath}/bills/${bill.id}/payments`}
+                  className="mt-2 bg-indigo-500 text-white p-2 rounded w-full block text-center"
+                >
+                  View Payments
+                </Link>
+                <button
+                  onClick={() => downloadPaymentStatement(bill.id)}
+                  className="mt-2 bg-teal-500 text-white p-2 rounded w-full"
+                >
+                  Download Payment Statement
+                </button>
+              </>
+            )}
             <button
               onClick={() => handleDelete(bill.id)}
               className="mt-2 bg-red-500 text-white p-2 rounded w-full"

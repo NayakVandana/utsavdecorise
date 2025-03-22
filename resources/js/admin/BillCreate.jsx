@@ -16,11 +16,20 @@ const BillCreate = ({ token }) => {
     items: [{ item_name: '', quantity: 1, price: 0 }],
     bill_copy: null,
     terms_condition_ids: [],
+    payment: {
+      amount: '',
+      payment_type: '',
+      mode_of_payment: '',
+      payment_date: '',
+      notes: '',
+    },
   });
   const [preview, setPreview] = useState({
     ...form,
-    bill_copy: null, // Initialize as null or empty string
+    bill_copy: null,
+    payment: { ...form.payment },
   });
+  const [showPayment, setShowPayment] = useState(false); // New state for toggling payment section
   const [templates, setTemplates] = useState([]);
   const [termsConditions, setTermsConditions] = useState([]);
   const [errors, setErrors] = useState({});
@@ -51,7 +60,7 @@ const BillCreate = ({ token }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    
+
     formData.append('name', form.name);
     formData.append('email', form.email);
     formData.append('mobile', form.mobile);
@@ -73,6 +82,15 @@ const BillCreate = ({ token }) => {
       formData.append(`terms_condition_ids[${index}]`, id);
     });
 
+    // Add payment data only if checkbox is checked and fields are filled
+    if (showPayment && (form.payment.amount || form.payment.payment_type || form.payment.mode_of_payment || form.payment.payment_date)) {
+      formData.append('payment[amount]', form.payment.amount);
+      formData.append('payment[payment_type]', form.payment.payment_type);
+      formData.append('payment[mode_of_payment]', form.payment.mode_of_payment);
+      formData.append('payment[payment_date]', form.payment.payment_date);
+      formData.append('payment[notes]', form.payment.notes || '');
+    }
+
     try {
       await api.post('/bills', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -82,9 +100,11 @@ const BillCreate = ({ token }) => {
         issue_date: '', due_date: '', status: 'pending', notes: '',
         items: [{ item_name: '', quantity: 1, price: 0 }],
         bill_copy: null, terms_condition_ids: [],
+        payment: { amount: '', payment_type: '', mode_of_payment: '', payment_date: '', notes: '' },
       };
       setForm(resetForm);
-      setPreview({ ...resetForm, bill_copy: null });
+      setPreview({ ...resetForm, bill_copy: null, payment: { ...resetForm.payment } });
+      setShowPayment(false); // Reset checkbox state
       setErrors({});
       const user = JSON.parse(localStorage.getItem('user'));
       const basePath = user?.is_admin === 2 ? '/superadmin' : '/admin';
@@ -113,9 +133,10 @@ const BillCreate = ({ token }) => {
         items: template.items.map(item => ({ ...item })),
         bill_copy: null,
         terms_condition_ids: template.terms_conditions ? template.terms_conditions.map(tc => tc.id) : [],
+        payment: { amount: '', payment_type: '', mode_of_payment: '', payment_date: '', notes: '' },
       };
       setForm(updatedForm);
-      setPreview({ ...updatedForm, bill_copy: null });
+      setPreview({ ...updatedForm, bill_copy: null, payment: { ...updatedForm.payment } });
     }
   };
 
@@ -138,10 +159,16 @@ const BillCreate = ({ token }) => {
     setPreview({ ...updatedForm, bill_copy: form.bill_copy ? form.bill_copy.name : null });
   };
 
+  const handlePaymentChange = (field, value) => {
+    const updatedPayment = { ...form.payment, [field]: value };
+    setForm({ ...form, payment: updatedPayment });
+    setPreview({ ...form, payment: updatedPayment, bill_copy: form.bill_copy ? form.bill_copy.name : null });
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setForm({ ...form, bill_copy: file });
-    setPreview({ ...form, bill_copy: file ? file.name : null }); // Store file name in preview
+    setPreview({ ...form, bill_copy: file ? file.name : null });
   };
 
   const handleTermsChange = (termId) => {
@@ -184,7 +211,7 @@ const BillCreate = ({ token }) => {
           {errors.issue_date && <p className="text-red-500 text-sm">{errors.issue_date[0]}</p>}
           <input type="datetime-local" value={form.due_date} onChange={(e) => handleInputChange('due_date', e.target.value)} className="w-full p-2 border rounded" required />
           {errors.due_date && <p className="text-red-500 text-sm">{errors.due_date[0]}</p>}
-          <input type="text" placeholder="Status" value={form.status} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full p-2 border rounded" required />
+          <input type="text" placeholder="Status" value={form.status} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full p-2 border rounded" disabled />
           {errors.status && <p className="text-red-500 text-sm">{errors.status[0]}</p>}
           <select onChange={(e) => applyTemplate(e.target.value)} className="w-full p-2 border rounded">
             <option value="">Choose Template</option>
@@ -205,6 +232,69 @@ const BillCreate = ({ token }) => {
           {errors.notes && <p className="text-red-500 text-sm">{errors.notes[0]}</p>}
           <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="w-full p-2 border rounded" />
           {errors.bill_copy && <p className="text-red-500 text-sm">{errors.bill_copy[0]}</p>}
+
+          {/* Payment Checkbox and Section */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="add-payment"
+              checked={showPayment}
+              onChange={(e) => setShowPayment(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="add-payment" className="text-lg font-semibold">Add Payment</label>
+          </div>
+          {showPayment && (
+            <fieldset className="border p-4 rounded">
+              <legend className="text-lg font-semibold">Payment Details</legend>
+              <input
+                type="number"
+                placeholder="Amount"
+                value={form.payment.amount}
+                onChange={(e) => handlePaymentChange('amount', e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+                step="0.01"
+              />
+              {errors['payment.amount'] && <p className="text-red-500 text-sm">{errors['payment.amount'][0]}</p>}
+              <select
+                value={form.payment.payment_type}
+                onChange={(e) => handlePaymentChange('payment_type', e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              >
+                <option value="">Select Payment Type</option>
+                <option value="advance">Advance</option>
+                <option value="to_complete">To Complete</option>
+              </select>
+              {errors['payment.payment_type'] && <p className="text-red-500 text-sm">{errors['payment.payment_type'][0]}</p>}
+              <select
+                value={form.payment.mode_of_payment}
+                onChange={(e) => handlePaymentChange('mode_of_payment', e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              >
+                <option value="">Select Mode of Payment</option>
+                <option value="cash">Cash</option>
+                <option value="cheque">Cheque</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="upi">UPI</option>
+              </select>
+              {errors['payment.mode_of_payment'] && <p className="text-red-500 text-sm">{errors['payment.mode_of_payment'][0]}</p>}
+              <input
+                type="datetime-local"
+                value={form.payment.payment_date}
+                onChange={(e) => handlePaymentChange('payment_date', e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              />
+              {errors['payment.payment_date'] && <p className="text-red-500 text-sm">{errors['payment.payment_date'][0]}</p>}
+              <textarea
+                placeholder="Payment Notes"
+                value={form.payment.notes}
+                onChange={(e) => handlePaymentChange('notes', e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+              {errors['payment.notes'] && <p className="text-red-500 text-sm">{errors['payment.notes'][0]}</p>}
+            </fieldset>
+          )}
+
           <div className="space-y-2 max-h-32 overflow-y-auto border p-2 rounded">
             {termsConditions.map(tc => (
               <div key={tc.id} className="flex items-start">
@@ -244,7 +334,21 @@ const BillCreate = ({ token }) => {
           </ul>
           <p className="text-lg font-bold mt-2">Total: ${calculateTotal(preview.items)}</p>
           {preview.notes && <p><strong>Notes:</strong> {preview.notes}</p>}
-          {preview.bill_copy && <p><strong>Bill Copy:</strong> {preview.bill_copy}</p>} {/* Now renders file name */}
+          {preview.bill_copy && <p><strong>Bill Copy:</strong> {preview.bill_copy}</p>}
+
+          {/* Payment Preview - Show only if checkbox is checked */}
+          {showPayment && (preview.payment.amount || preview.payment.payment_type) && (
+            <div className="mt-4">
+              <h4 className="text-lg font-semibold">Payment</h4>
+              <p><strong>Amount:</strong> ${preview.payment.amount || 'N/A'}</p>
+              <p><strong>Type:</strong> {preview.payment.payment_type ? preview.payment.payment_type.replace('_', ' ').toUpperCase() : 'N/A'}</p>
+              <p><strong>Mode:</strong> {preview.payment.mode_of_payment ? preview.payment.mode_of_payment.replace('_', ' ').toUpperCase() : 'N/A'}</p>
+              <p><strong>Date:</strong> {preview.payment.payment_date || 'N/A'}</p>
+              {preview.payment.notes && <p><strong>Notes:</strong> {preview.payment.notes}</p>}
+              <p><strong>Balance Due:</strong> ${(calculateTotal(preview.items) - (parseFloat(preview.payment.amount) || 0)).toFixed(2)}</p>
+            </div>
+          )}
+
           {preview.terms_condition_ids.length > 0 && (
             <div className="mt-2">
               <strong>Terms and Conditions:</strong>

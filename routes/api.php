@@ -28,4 +28,10 @@ Route::middleware(\App\Http\Middleware\VerifyToken::class)->group(function () {
 //     Route::apiResource('bills', BillController::class);
 // Route::apiResource('bill-templates', BillTemplateController::class);
 Route::apiResource('terms-conditions', TermsConditionController::class);
+
+
+Route::post('/bills/{billId}/payments', [BillController::class, 'addPayment']);
+    Route::get('/bills/{billId}/payments', [BillController::class, 'getPayments']); // New: List payments
+    Route::get('/bills/{billId}/payment-statement', [BillController::class, 'downloadPaymentStatement']); // New: PDF statement
+    Route::get('/all-payments', [BillController::class, 'allPayments']); // New: Al
 });
