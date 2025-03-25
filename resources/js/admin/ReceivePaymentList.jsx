@@ -28,6 +28,14 @@ const ReceivePaymentList = ({ token, user }) => {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
+
+<div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">Create Template</h2>
+        <button onClick={() => navigate(`${basePath}/bills`)} className="bg-gray-500 text-white p-2 rounded">Back</button>
+      </div>
+
+
+      
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Received Payments for Bill #{bill.invoice_number}</h2>
       <p className="text-sm text-gray-600 mb-4">Customer: {bill.name}</p>
       <p className="text-sm text-gray-600 mb-4">Total Amount: ${bill.total_amount}</p>
@@ -64,12 +72,12 @@ const ReceivePaymentList = ({ token, user }) => {
           </tbody>
         </table>
       </div>
-      <button
+      {/* <button
         onClick={() => navigate(`${basePath}/bills`)}
         className="mt-4 bg-gray-500 text-white p-2 rounded"
       >
         Back to Bills
-      </button>
+      </button> */}
     </div>
   );
 };

@@ -57,12 +57,12 @@ const AllReceivePayments = ({ token, user }) => {
           </tbody>
         </table>
       </div>
-      <button
+      {/* <button
         onClick={() => navigate(`${basePath}/bills`)}
         className="mt-4 bg-gray-500 text-white p-2 rounded"
       >
         Back to Bills
-      </button>
+      </button> */}
     </div>
   );
 };
