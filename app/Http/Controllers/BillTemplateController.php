@@ -16,7 +16,7 @@ class BillTemplateController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'template_name' => 'required|string|max:255',
+            'template_name' => 'required|string|max:255|unique:bill_templates,template_name', // Add unique rule
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'mobile' => 'required|string|max:15',
@@ -111,5 +111,10 @@ class BillTemplateController extends Controller
         $template = BillTemplate::whereNull('deleted_at')->findOrFail($id);
         $template->delete();
         return response()->json(null, 204);
+    }
+
+    public function clone($id)
+    {
+        return response()->json(BillTemplate::with(['items', 'termsConditions'])->whereNull('deleted_at')->findOrFail($id));
     }
 }

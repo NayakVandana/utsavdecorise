@@ -25,6 +25,7 @@ Route::middleware(\App\Http\Middleware\VerifyToken::class)->group(function () {
     Route::apiResource('bills', BillController::class);
     Route::get('bills/{id}/pdf', [BillController::class, 'downloadPdf'])->name('bills.pdf');
     Route::apiResource('bill-templates', BillTemplateController::class);
+    Route::post('/bill-templates/clone/{id}', [BillTemplateController::class, 'clone']);
 //     Route::apiResource('bills', BillController::class);
 // Route::apiResource('bill-templates', BillTemplateController::class);
 Route::apiResource('terms-conditions', TermsConditionController::class);

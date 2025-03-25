@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
 const TemplateList = ({ token, user }) => {
   const [templates, setTemplates] = useState([]);
-  const [selectedTerms, setSelectedTerms] = useState({}); // Tracks selected terms for each template
+  const [selectedTerms, setSelectedTerms] = useState({});
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [cloneTemplateId, setCloneTemplateId] = useState(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -27,19 +31,49 @@ const TemplateList = ({ token, user }) => {
     }
   };
 
+  const handleCloneClick = (id, currentName) => {
+    setCloneTemplateId(id);
+    setNewTemplateName(`${currentName} (Clone)`);
+    setShowCloneModal(true);
+  };
+
+  const handleCloneSubmit = async (e) => {
+    e.preventDefault();
+    if (!newTemplateName.trim()) {
+      alert('Template name is required');
+      return;
+    }
+
+    try {
+      const response = await api.post(`/bill-templates/clone/${cloneTemplateId}`, {
+        template_name: newTemplateName,
+      });
+      console.log('Template cloned:', response.data);
+      setShowCloneModal(false);
+      setNewTemplateName('');
+      setCloneTemplateId(null);
+
+      const basePath = user?.is_admin === 2 ? '/superadmin' : '/admin';
+      // Pass both the entered name and cloned data
+      navigate(`${basePath}/templates/create`, {
+        state: {
+          clonedTemplate: response.data,
+          newTemplateName: newTemplateName, // Preserve the entered name
+        },
+      });
+    } catch (err) {
+      console.error('Error cloning template:', err);
+      alert('Failed to clone template');
+    }
+  };
+
   const handleCheckboxChange = (templateId, termId) => {
     setSelectedTerms(prev => {
       const templateTerms = prev[templateId] || [];
       if (templateTerms.includes(termId)) {
-        return {
-          ...prev,
-          [templateId]: templateTerms.filter(id => id !== termId),
-        };
+        return { ...prev, [templateId]: templateTerms.filter(id => id !== termId) };
       } else {
-        return {
-          ...prev,
-          [templateId]: [...templateTerms, termId],
-        };
+        return { ...prev, [templateId]: [...templateTerms, termId] };
       }
     });
   };
@@ -101,10 +135,55 @@ const TemplateList = ({ token, user }) => {
               >
                 Delete
               </button>
+              <button
+                onClick={() => handleCloneClick(template.id, template.template_name)}
+                className="bg-yellow-500 text-white p-2 rounded"
+              >
+                Clone
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Clone Modal */}
+      {showCloneModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Clone Template</h3>
+            <form onSubmit={handleCloneSubmit}>
+              <div className="mb-4">
+                <label htmlFor="template_name" className="block text-sm font-medium text-gray-700">
+                  New Template Name
+                </label>
+                <input
+                  type="text"
+                  id="template_name"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  className="mt-1 p-2 w-full border rounded-md"
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCloneModal(false)}
+                  className="bg-gray-300 text-gray-700 p-2 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+                >
+                  Clone
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

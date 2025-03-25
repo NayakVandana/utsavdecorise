@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../utils/api';
 
 const TemplateCreate = ({ token }) => {
@@ -21,6 +21,7 @@ const TemplateCreate = ({ token }) => {
   const [termsConditions, setTermsConditions] = useState([]);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchTermsConditions = async () => {
@@ -32,14 +33,42 @@ const TemplateCreate = ({ token }) => {
       }
     };
     fetchTermsConditions();
-  }, [token]);
+
+    // Pre-fill form with cloned template data, prioritizing newTemplateName from popup
+    const clonedTemplate = location.state?.clonedTemplate;
+    const newTemplateName = location.state?.newTemplateName; // Get the name entered in popup
+    if (clonedTemplate) {
+      const clonedForm = {
+        template_name: newTemplateName || clonedTemplate.template_name || '', // Use popup name first
+        name: clonedTemplate.name || '',
+        email: clonedTemplate.email || '',
+        mobile: clonedTemplate.mobile || '',
+        address: clonedTemplate.address || '',
+        invoice_number: clonedTemplate.invoice_number || '',
+        issue_date: clonedTemplate.issue_date || '',
+        due_date: clonedTemplate.due_date || '',
+        status: clonedTemplate.status || 'pending',
+        items: clonedTemplate.items.length > 0
+          ? clonedTemplate.items.map(item => ({
+              item_name: item.item_name,
+              quantity: item.quantity,
+              price: item.price,
+            }))
+          : [{ item_name: '', quantity: 1, price: 0 }],
+        notes: clonedTemplate.notes || '',
+        terms_condition_ids: clonedTemplate.terms_conditions?.map(tc => tc.id) || [],
+      };
+      setForm(clonedForm);
+      setPreview(clonedForm);
+    }
+  }, [token, location.state]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
       ...form,
-      items: JSON.stringify(form.items), // Convert items to JSON string
-      terms_condition_ids: form.terms_condition_ids, // Keep as array
+      items: JSON.stringify(form.items),
+      terms_condition_ids: form.terms_condition_ids,
     };
 
     try {
@@ -110,34 +139,122 @@ const TemplateCreate = ({ token }) => {
       {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general[0]}</p>}
       <div className="flex flex-col md:flex-row gap-6">
         <form onSubmit={handleSubmit} className="w-full md:w-1/2 space-y-4 bg-white p-4 rounded-2xl shadow-lg">
-          <input type="text" placeholder="Template Name" value={form.template_name} onChange={(e) => handleInputChange('template_name', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="text"
+            placeholder="Template Name"
+            value={form.template_name}
+            onChange={(e) => handleInputChange('template_name', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.template_name && <p className="text-red-500 text-sm">{errors.template_name[0]}</p>}
-          <input type="text" placeholder="Sample Name" value={form.name} onChange={(e) => handleInputChange('name', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="text"
+            placeholder="Sample Name"
+            value={form.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.name && <p className="text-red-500 text-sm">{errors.name[0]}</p>}
-          <input type="email" placeholder="Sample Email" value={form.email} onChange={(e) => handleInputChange('email', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="email"
+            placeholder="Sample Email"
+            value={form.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.email && <p className="text-red-500 text-sm">{errors.email[0]}</p>}
-          <input type="text" placeholder="Sample Mobile" value={form.mobile} onChange={(e) => handleInputChange('mobile', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="text"
+            placeholder="Sample Mobile"
+            value={form.mobile}
+            onChange={(e) => handleInputChange('mobile', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.mobile && <p className="text-red-500 text-sm">{errors.mobile[0]}</p>}
-          <textarea placeholder="Sample Address" value={form.address} onChange={(e) => handleInputChange('address', e.target.value)} className="w-full p-2 border rounded" required />
+          <textarea
+            placeholder="Sample Address"
+            value={form.address}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.address && <p className="text-red-500 text-sm">{errors.address[0]}</p>}
-          <input type="text" placeholder="Sample Invoice Number" value={form.invoice_number} onChange={(e) => handleInputChange('invoice_number', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="text"
+            placeholder="Sample Invoice Number"
+            value={form.invoice_number}
+            onChange={(e) => handleInputChange('invoice_number', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.invoice_number && <p className="text-red-500 text-sm">{errors.invoice_number[0]}</p>}
-          <input type="datetime-local" value={form.issue_date} onChange={(e) => handleInputChange('issue_date', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="datetime-local"
+            value={form.issue_date}
+            onChange={(e) => handleInputChange('issue_date', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.issue_date && <p className="text-red-500 text-sm">{errors.issue_date[0]}</p>}
-          <input type="datetime-local" value={form.due_date} onChange={(e) => handleInputChange('due_date', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="datetime-local"
+            value={form.due_date}
+            onChange={(e) => handleInputChange('due_date', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.due_date && <p className="text-red-500 text-sm">{errors.due_date[0]}</p>}
-          <input type="text" placeholder="Status" value={form.status} onChange={(e) => handleInputChange('status', e.target.value)} className="w-full p-2 border rounded" required />
+          <input
+            type="text"
+            placeholder="Status"
+            value={form.status}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+            className="w-full p-2 border rounded"
+            required
+          />
           {errors.status && <p className="text-red-500 text-sm">{errors.status[0]}</p>}
           {form.items.map((item, index) => (
             <div key={index} className="flex gap-2">
-              <input type="text" placeholder="Item Name" value={item.item_name} onChange={(e) => handleItemChange(index, 'item_name', e.target.value)} className="flex-1 p-2 border rounded" required />
-              <input type="number" placeholder="Quantity" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} className="w-20 p-2 border rounded" required />
-              <input type="number" placeholder="Price" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} className="w-24 p-2 border rounded" required />
+              <input
+                type="text"
+                placeholder="Item Name"
+                value={item.item_name}
+                onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                className="flex-1 p-2 border rounded"
+                required
+              />
+              <input
+                type="number"
+                placeholder="Quantity"
+                value={item.quantity}
+                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                className="w-20 p-2 border rounded"
+                required
+              />
+              <input
+                type="number"
+                placeholder="Price"
+                value={item.price}
+                onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                className="w-24 p-2 border rounded"
+                required
+              />
             </div>
           ))}
           {errors.items && <p className="text-red-500 text-sm">{errors.items[0]}</p>}
-          <button type="button" onClick={addItem} className="bg-blue-500 text-white p-2 rounded">Add Item</button>
-          <textarea placeholder="Notes" value={form.notes} onChange={(e) => handleInputChange('notes', e.target.value)} className="w-full p-2 border rounded" />
+          <button type="button" onClick={addItem} className="bg-blue-500 text-white p-2 rounded">
+            Add Item
+          </button>
+          <textarea
+            placeholder="Notes"
+            value={form.notes}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            className="w-full p-2 border rounded"
+          />
           {errors.notes && <p className="text-red-500 text-sm">{errors.notes[0]}</p>}
           <div className="space-y-2 max-h-32 overflow-y-auto border p-2 rounded">
             {termsConditions.map(tc => (
@@ -156,7 +273,9 @@ const TemplateCreate = ({ token }) => {
             ))}
           </div>
           {errors.terms_condition_ids && <p className="text-red-500 text-sm">{errors.terms_condition_ids[0]}</p>}
-          <button type="submit" className="bg-green-500 text-white p-2 rounded w-full">Create Template</button>
+          <button type="submit" className="bg-green-500 text-white p-2 rounded w-full">
+            Create Template
+          </button>
         </form>
 
         <div className="w-full md:w-1/2 bg-white p-4 rounded-2xl shadow-lg">
