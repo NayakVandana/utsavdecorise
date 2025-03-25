@@ -4,7 +4,6 @@
     <title>Invoice {{ $bill->invoice_number }}</title>
     <meta charset="UTF-8">
     <style>
-        /* [Your existing styles remain unchanged] */
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
@@ -71,6 +70,17 @@
             margin-top: 10px;
             color: #007bff;
         }
+        .payments {
+            margin-top: 30px;
+            border-top: 1px dashed #ddd;
+            padding-top: 20px;
+        }
+        .payments h3 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 10px;
+        }
         .terms {
             margin-top: 30px;
             border-top: 1px dashed #ddd;
@@ -118,8 +128,6 @@
         @endif
     </div>
 
-    <p>Debug: Items count: {{ count($itemsArray) }}</p>
-
     <table>
         <thead>
             <tr>
@@ -146,8 +154,38 @@
     </table>
 
     <p class="total">Total Amount: ${{ number_format($bill->total_amount, 2) }}</p>
+    <p class="total">Paid Amount: ${{ number_format($bill->receivePayments->sum('amount'), 2) }}</p>
+    <p class="total">Remaining Amount: ${{ number_format($bill->total_amount - $bill->receivePayments->sum('amount'), 2) }}</p>
 
-    @if($bill->termsConditions->isNotEmpty())
+    @if($bill->receivePayments && $bill->receivePayments->isNotEmpty())
+        <div class="payments">
+            <h3>Payment History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($bill->receivePayments as $payment)
+                        <tr>
+                            <td>{{ $payment->payment_date->format('Y-m-d H:i') }}</td>
+                            <td>${{ number_format($payment->amount, 2) }}</td>
+                            <td>{{ $payment->mode_of_payment ?? 'N/A' }}</td>
+                            <td>{{ $payment->payment_type ?? 'N/A' }}</td>
+                            <td>{{ $payment->notes ?? 'N/A' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
+    @if($bill->termsConditions && $bill->termsConditions->isNotEmpty())
         <div class="terms">
             <h3>Terms and Conditions</h3>
             <ul>
