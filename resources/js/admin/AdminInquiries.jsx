@@ -20,7 +20,7 @@ function AdminInquiries() {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8 min-h-screen bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">Admin Inquiries</h1>
       </div>
@@ -32,34 +32,38 @@ function AdminInquiries() {
       )}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden border-separate border-spacing-0">
           <thead className="bg-gray-100 text-gray-600 uppercase text-xs sm:text-sm">
             <tr>
-              <th className="py-3 px-4 text-left">ID</th>
-              <th className="py-3 px-4 text-left">Name</th>
-              <th className="py-3 px-4 text-left">Email</th>
-              <th className="py-3 px-4 text-left">Message</th>
-              <th className="py-3 px-4 text-left">Date</th>
+              <th className="py-3 px-6 text-center font-semibold w-1/12">ID</th>
+              <th className="py-3 px-6 text-left font-semibold w-2/12">Name</th>
+              <th className="py-3 px-6 text-left font-semibold w-2/12">Email</th>
+              <th className="py-3 px-6 text-left font-semibold w-4/12">Message</th>
+              <th className="py-3 px-6 text-center font-semibold w-3/12">Date</th>
             </tr>
           </thead>
           <tbody className="text-gray-700 text-sm">
             {inquiries.length > 0 ? (
               inquiries.map(inquiry => (
                 <tr key={inquiry.id} className="border-b hover:bg-gray-50 transition">
-                  <td className="py-4 px-4">{inquiry.id}</td>
-                  <td className="py-4 px-4">{inquiry.name}</td>
-                  <td className="py-4 px-4">{inquiry.email}</td>
-                  <td className="py-4 px-4 max-w-xs truncate">
-                    {inquiry.message.length > 50 ? `${inquiry.message.substring(0, 50)}...` : inquiry.message}
+                  <td className="py-4 px-6 text-center align-middle w-1/12">{inquiry.id || 'N/A'}</td>
+                  <td className="py-4 px-6 text-left align-middle w-2/12 truncate">{inquiry.name || 'N/A'}</td>
+                  <td className="py-4 px-6 text-left align-middle w-2/12 truncate">{inquiry.email || 'N/A'}</td>
+                  <td className="py-4 px-6 text-left align-middle w-4/12 truncate">
+                    {inquiry.message
+                      ? inquiry.message.length > 50
+                        ? `${inquiry.message.substring(0, 50)}...`
+                        : inquiry.message
+                      : 'N/A'}
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-6 text-center align-middle w-3/12">
                     {inquiry.created_at ? new Date(inquiry.created_at).toLocaleString() : 'N/A'}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="py-4 px-4 text-center text-gray-500">
+                <td colSpan="5" className="py-4 px-6 text-center text-gray-500 align-middle">
                   No inquiries found.
                 </td>
               </tr>
