@@ -6,17 +6,47 @@ use App\Models\BillTemplate;
 use App\Models\BillItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+
 class BillTemplateController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(BillTemplate::with(['items', 'termsConditions'])->whereNull('deleted_at')->get());
+        // Get pagination and search parameters from the request
+        $perPage = $request->query('per_page', 10); // Default to 10 items per page
+        $page = $request->query('page', 1); // Default to page 1
+        $searchKeywords = $request->query('search_keywords', '');
+
+        // Build the query
+        $query = BillTemplate::with(['items', 'termsConditions'])
+            ->whereNull('deleted_at');
+
+        // Apply search filter across multiple fields
+        if (!empty($searchKeywords)) {
+            $query->where(function ($q) use ($searchKeywords) {
+                $q->where('template_name', 'like', "%{$searchKeywords}%")
+                  ->orWhere('name', 'like', "%{$searchKeywords}%")
+                  ->orWhere('email', 'like', "%{$searchKeywords}%")
+                  ->orWhere('mobile', 'like', "%{$searchKeywords}%");
+            });
+        }
+
+        // Apply pagination
+        $templates = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Return paginated response
+        return response()->json([
+            'data' => $templates->items(), // The actual templates
+            'current_page' => $templates->currentPage(),
+            'last_page' => $templates->lastPage(),
+            'per_page' => $templates->perPage(),
+            'total' => $templates->total(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'template_name' => 'required|string|max:255|unique:bill_templates,template_name', // Add unique rule
+            'template_name' => 'required|string|max:255|unique:bill_templates,template_name',
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'mobile' => 'required|string|max:15',
@@ -25,7 +55,7 @@ class BillTemplateController extends Controller
             'issue_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:issue_date',
             'status' => 'required|in:pending,paid,overdue',
-            'items' => 'required|json', // Expect items as JSON string
+            'items' => 'required|json',
             'terms_condition_ids' => 'nullable|array',
             'terms_condition_ids.*' => 'exists:terms_conditions,id',
             'notes' => 'nullable|string',
@@ -45,7 +75,7 @@ class BillTemplateController extends Controller
             'issue_date' => $request->issue_date,
             'due_date' => $request->due_date,
             'status' => $request->status,
-            'items' => $request->items, // Store as JSON
+            'items' => $request->items,
             'notes' => $request->notes,
         ]);
 
@@ -95,7 +125,7 @@ class BillTemplateController extends Controller
             'issue_date' => $request->issue_date,
             'due_date' => $request->due_date,
             'status' => $request->status,
-            'items' => $request->items, // Update as JSON
+            'items' => $request->items,
             'notes' => $request->notes,
         ]);
 
