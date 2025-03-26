@@ -11,17 +11,30 @@ use Illuminate\Support\Facades\Log;
 
 class BillController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $bills = Bill::with(['items', 'termsConditions', 'receivePayments'])->whereNull('deleted_at')->get();
-        foreach ($bills as $bill) {
-            $bill->calculateTotal(); // Ensure total_amount is up-to-date
-            $bill->updatePaymentStatus(); // Reflect payment status
-        }
-        return response()->json($bills);
-    }
+        $query = Bill::with(['items', 'termsConditions', 'receivePayments'])->whereNull('deleted_at');
 
-    
+        // Search functionality
+        if ($request->has('search_keywords') && !empty($request->search_keywords)) {
+            $search = $request->search_keywords;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('mobile', 'like', "%{$search}%")
+                  ->orWhere('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+
+        // Sorting and Pagination
+        $perPage = $request->input('per_page', 10); // Default to 10 items per page
+        $currentPage = $request->input('page', 1); // Default to page 1
+        $bills = $query->orderBy('created_at', 'DESC')->paginate($perPage, ['*'], 'page', $currentPage);
+
+        return response()->json($bills); // Return the paginated response directly
+    }
 
     public function store(Request $request)
     {
