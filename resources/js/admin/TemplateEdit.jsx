@@ -81,10 +81,9 @@ const TemplateEdit = ({ token }) => {
         setErrors({});
         setLoading(true);
 
-        // Convert items array to JSON string
         const payload = {
             ...form,
-            items: JSON.stringify(form.items), // Convert array to JSON string
+            items: JSON.stringify(form.items),
             terms_condition_ids: form.terms_condition_ids,
         };
 
@@ -110,6 +109,14 @@ const TemplateEdit = ({ token }) => {
         const newItems = [...form.items, { item_name: '', quantity: 1, price: 0 }];
         setForm({ ...form, items: newItems });
         setPreview({ ...form, items: newItems });
+    };
+
+    const deleteItem = (index) => {
+        if (form.items.length > 1) {
+            const newItems = form.items.filter((_, i) => i !== index);
+            setForm({ ...form, items: newItems });
+            setPreview({ ...form, items: newItems });
+        }
     };
 
     const handleItemChange = (index, field, value) => {
@@ -301,8 +308,8 @@ const TemplateEdit = ({ token }) => {
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-gray-800">Items</h3>
                             {form.items.map((item, index) => (
-                                <div key={index} className="flex gap-3 items-start">
-                                    <div className="flex-1">
+                                <div key={index} className="flex gap-3 items-center">
+                                    <div className="flex-1 min-w-0">
                                         <label htmlFor={`item_name_${index}`} className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
                                         <input
                                             type="text"
@@ -314,7 +321,7 @@ const TemplateEdit = ({ token }) => {
                                             required
                                         />
                                     </div>
-                                    <div className="w-20">
+                                    <div className="w-20 flex-shrink-0">
                                         <label htmlFor={`quantity_${index}`} className="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                                         <input
                                             type="number"
@@ -327,7 +334,7 @@ const TemplateEdit = ({ token }) => {
                                             required
                                         />
                                     </div>
-                                    <div className="w-24">
+                                    <div className="w-24 flex-shrink-0">
                                         <label htmlFor={`price_${index}`} className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                                         <input
                                             type="number"
@@ -341,16 +348,32 @@ const TemplateEdit = ({ token }) => {
                                             required
                                         />
                                     </div>
+                                    <div className="w-20 flex-shrink-0 flex items-end">
+                                       
+                                     
+                                        {form.items.length > 1 && (
+                                            
+                                            <button
+                                                type="button"
+                                                onClick={() => deleteItem(index)}
+                                                className="w-full p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition mt-5"
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                             {errors.items && <p className="text-red-500 text-sm">{errors.items[0]}</p>}
-                            <button
-                                type="button"
-                                onClick={addItem}
-                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm sm:text-base font-semibold"
-                            >
-                                Add Item
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={addItem}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm sm:text-base font-semibold"
+                                >
+                                    Add Item
+                                </button>
+                            </div>
                         </div>
 
                         <div>
