@@ -41,7 +41,9 @@ const BillCreate = ({ token }) => {
     const fetchTemplates = async () => {
       try {
         const response = await api.get('/bill-templates');
-        setTemplates(response.data || []);
+        setTemplates(response.data.data || []);
+
+      
       } catch (err) {
         console.error('Error fetching templates:', err);
       }
@@ -333,19 +335,25 @@ const BillCreate = ({ token }) => {
                 />
                 {errors.status && <p className="text-red-500 text-sm mt-1">{errors.status[0]}</p>}
               </div>
-              <div>
-                <label htmlFor="template" className="block text-sm font-medium text-gray-700 mb-1">Choose Template</label>
-                <select
-                  id="template"
-                  onChange={(e) => applyTemplate(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                >
-                  <option value="">Select a Template</option>
-                  {templates.map(template => (
-                    <option key={template.id} value={template.id}>{template.template_name}</option>
-                  ))}
-                </select>
-              </div>
+              {templates.length > 0 && (
+  <div>
+    <label htmlFor="template" className="block text-sm font-medium text-gray-700 mb-1">
+      Choose Template
+    </label>
+    <select
+      id="template"
+      onChange={(e) => applyTemplate(e.target.value)}
+      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+    >
+      <option value="">Select a Template</option>
+      {templates.map(template => (
+        <option key={template.id} value={template.id}>
+          {template.template_name}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
             </div>
 
             {/* Items */}
